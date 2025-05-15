@@ -33,12 +33,12 @@ import random
 # CONFIG - Modify these parameters for direct execution in IDE
 #############################################################
 # Set to None to use command-line args or GUI
-INPUT_TIME_INTERVAL = 1.0  # Time between frames
+INPUT_TIME_INTERVAL = 200.0  # Time between frames
 INPUT_NUM_INTERVALS = 25    # Number of time intervals to analyze
 
 # Experiment directory containing condition folders
 #INPUT_EXPERIMENT_DIR = None  # e.g., "/path/to/experiment"
-INPUT_EXPERIMENT_DIR ='/Users/george/Desktop/gabby_10ms_data_bin20/autocorrelation_SVM1'
+INPUT_EXPERIMENT_DIR ='/Users/george/Desktop/gabby_10ms_data_bin20/linearity/GoF_Yoda1/results/mobile_results'
 
 # Single condition folder - Set to None to use experiment directory mode
 INPUT_CONDITION_DIR = None  # e.g., "/path/to/control"
@@ -53,12 +53,17 @@ FILE_PATTERN = "*.xlsx;*.xls;*.csv"  # Semicolon-separated
 # Output directory (created if it doesn't exist)
 OUTPUT_DIR = "autocorrelation_output"
 
-# Advanced options
+# Plot options
 SAVE_INDIVIDUAL_TRACKS = True  # Save individual track data to files
 PLOT_INDIVIDUAL_TRACKS = True  # Create plots with individual tracks
 MAX_TRACKS_TO_PLOT = 100      # Maximum number of tracks to show in individual track plots
 PLOT_Y_MIN = -0.2             # Minimum y-axis value for all plots
 PLOT_Y_MAX = 1.0              # Maximum y-axis value for all plots
+PLOT_X_MIN = 0                # Minimum x-axis value for all plots
+PLOT_X_MAX = 2000            # Maximum x-axis value for all plots (None for auto-scaling based on data)
+
+# Cross-condition plot options
+CROSS_CONDITION_PLOT_TITLE = 'GOF-YODA1'  # Custom title for cross-condition plot (None = use default "Comparison Across Conditions")
 #############################################################
 
 
@@ -518,8 +523,11 @@ def plot_individual_tracks(tracks_df, averages, output_dir, sheet_name, output_p
     plt.xlabel('Time Interval', fontsize=14)
     plt.ylabel('Direction Autocorrelation', fontsize=14)
     plt.title(f'{sheet_name} - Individual Tracks and Average', fontsize=16)
-    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Fixed y-axis scale from -0.2 to 1.0
-    plt.xlim(0, max(x) * 1.05)
+    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Y-axis scale from config
+
+    # Set X-axis limits
+    x_max = PLOT_X_MAX if PLOT_X_MAX is not None else max(x) * 1.05
+    plt.xlim(PLOT_X_MIN, x_max)
 
     # Add legend
     plt.legend(['Individual Tracks', 'Average (± SEM)'])
@@ -578,6 +586,9 @@ def create_autocorrel_plot(all_results, output_dir, output_prefix="", title="Aut
     markers = ['o', 's', '^', 'd', 'v', '<', '>', 'p', '*']
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 
+    # Find the maximum x value across all conditions
+    max_x = max([max([float(col) for col in results.columns]) for results in all_results.values()])
+
     for i, (condition, results) in enumerate(all_results.items()):
         # Extract x and y values
         x = np.array([float(col) for col in results.columns])
@@ -597,8 +608,11 @@ def create_autocorrel_plot(all_results, output_dir, output_prefix="", title="Aut
     plt.xlabel('Time Interval', fontsize=14)
     plt.ylabel('Direction Autocorrelation', fontsize=14)
     plt.title(title, fontsize=16)
-    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Fixed y-axis scale from -0.2 to 1.0
-    plt.xlim(0, max([max([float(col) for col in results.columns]) for results in all_results.values()]) * 1.05)
+    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Y-axis scale from config
+
+    # Set X-axis limits
+    x_max = PLOT_X_MAX if PLOT_X_MAX is not None else max_x * 1.05
+    plt.xlim(PLOT_X_MIN, x_max)
 
     # Add legend if multiple conditions
     if len(all_results) > 1:
@@ -974,8 +988,11 @@ def create_condition_plot(summary_df, output_dir, condition_name):
     plt.xlabel('Time Interval', fontsize=14)
     plt.ylabel('Direction Autocorrelation', fontsize=14)
     plt.title(f'{condition_name} Autocorrelation', fontsize=16)
-    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Fixed y-axis scale from -0.2 to 1.0
-    plt.xlim(0, max(x) * 1.05)
+    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Y-axis scale from config
+
+    # Set X-axis limits
+    x_max = PLOT_X_MAX if PLOT_X_MAX is not None else max(x) * 1.05
+    plt.xlim(PLOT_X_MIN, x_max)
 
     plt.tight_layout()
 
@@ -1052,8 +1069,11 @@ def create_condition_individual_tracks_plot(aggregated_tracks_df, summary_df, ou
     plt.xlabel('Time Interval', fontsize=14)
     plt.ylabel('Direction Autocorrelation', fontsize=14)
     plt.title(f'{condition_name} - Individual Tracks and Average', fontsize=16)
-    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Fixed y-axis scale from -0.2 to 1.0
-    plt.xlim(0, max(x) * 1.05)
+    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Y-axis scale from config
+
+    # Set X-axis limits
+    x_max = PLOT_X_MAX if PLOT_X_MAX is not None else max(x) * 1.05
+    plt.xlim(PLOT_X_MIN, x_max)
 
     # Add legend
     plt.legend(['Individual Tracks', 'Average (± SEM)'])
@@ -1218,13 +1238,14 @@ def process_condition_folder(input_dir, file_pattern, time_interval, num_interva
     return success_count, fail_count, results_list, None
 
 
-def create_cross_condition_plot(condition_summaries, main_output_dir):
+def create_cross_condition_plot(condition_summaries, main_output_dir, experiment_dir=None):
     """
     Create a comparison plot across all conditions.
 
     Args:
         condition_summaries (dict): Dictionary mapping condition names to summary DataFrames
         main_output_dir (str): Directory to save the plot
+        experiment_dir (str, optional): Path to the experiment directory for custom title
 
     Returns:
         tuple: (png_path, pdf_path) Paths to the saved plot files
@@ -1236,6 +1257,9 @@ def create_cross_condition_plot(condition_summaries, main_output_dir):
     # Plot each condition
     markers = ['o', 's', '^', 'd', 'v', '<', '>', 'p', '*']
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+
+    # Find the maximum x value across all conditions
+    max_x = max([max([float(col) for col in summary.columns]) for summary in condition_summaries.values()])
 
     for i, (condition, summary) in enumerate(condition_summaries.items()):
         # Extract x and y values
@@ -1255,12 +1279,25 @@ def create_cross_condition_plot(condition_summaries, main_output_dir):
     plt.grid(False)
     plt.xlabel('Time Interval', fontsize=14)
     plt.ylabel('Direction Autocorrelation', fontsize=14)
-    plt.title('Comparison Across Conditions', fontsize=16)
-    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Fixed y-axis scale from -0.2 to 1.0
 
-    # Find the maximum x value across all conditions
-    max_x = max([max([float(col) for col in summary.columns]) for summary in condition_summaries.values()])
-    plt.xlim(0, max_x * 1.05)
+    # Set plot title
+    if CROSS_CONDITION_PLOT_TITLE is not None:
+        # Use custom title from config
+        plot_title = CROSS_CONDITION_PLOT_TITLE
+    elif experiment_dir is not None:
+        # Use experiment directory name as title
+        plot_title = f'Comparison Across Conditions - {os.path.basename(experiment_dir)}'
+    else:
+        # Default title
+        plot_title = 'Comparison Across Conditions'
+
+    plt.title(plot_title, fontsize=16)
+
+    plt.ylim(PLOT_Y_MIN, PLOT_Y_MAX)  # Y-axis scale from config
+
+    # Set X-axis limits
+    x_max = PLOT_X_MAX if PLOT_X_MAX is not None else max_x * 1.05
+    plt.xlim(PLOT_X_MIN, x_max)
 
     # Add legend
     plt.legend()
@@ -1384,8 +1421,8 @@ def process_experiment_directory(input_dir, file_pattern, time_interval, num_int
 
     # Create cross-condition comparison if we have multiple conditions
     if len(condition_summaries) > 1:
-        # Create comparison plot
-        create_cross_condition_plot(condition_summaries, main_output_dir)
+        # Create comparison plot passing experiment directory for title
+        create_cross_condition_plot(condition_summaries, main_output_dir, input_dir)
 
         # Create comparison summary file
         create_cross_condition_summary(condition_summaries, main_output_dir)
