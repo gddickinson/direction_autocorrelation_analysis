@@ -157,3 +157,7 @@ This allows automatic cross-condition comparison and aggregate statistics.
 
 This script implements directional persistence analysis as described in:
 Gorelik, R., & Gautreau, A. (2014). Quantitative and unbiased analysis of directional persistence in cell migration. *Nature Protocols, 9*(8), 1931-1943.
+
+
+---
+*Built with AI assistance from [Claude (Anthropic)](https://claude.com/).*
