@@ -18,7 +18,7 @@
   - `calculate_scalar_products(df, traj_starts, time_interval, num_intervals)` -> (combined_df, tracks_df)
   - `calculate_averages(scalar_products)` -> DataFrame with AVG/SEM rows
   - `process_sheet(sheet_df, time_interval, num_intervals)` -> (scalar_products, averages, tracks)
-  - `aggregate_condition_results(results_list, condition_name)` -> (summary_df, file_type, tracks_df)
+  - `aggregate_condition_results(results_list, condition_name)` -> (summary_df, file_type, tracks_df); one replicate per sheet (file:sheet for multi-sheet files)
 
 ### I/O
 - **io_utils.py** — File reading/writing
@@ -61,7 +61,7 @@
 - **requirements-web.txt** — pinned web/test dependencies
 
 ### Tests
-- **test_core.py** — 21 tests: vector normalization, scalar products (incl. `TestAllLagsComputed`: last lag computed, earlier lags equal the frozen pre-fix reference `tests/fixtures/pre_lastlag_reference.json`), averaging, index-label independence, column identification, file type detection
+- **test_core.py** — 23 tests (incl. `TestConditionAggregationSheets`: every sheet a replicate, single-sheet output equals the frozen reference `tests/fixtures/pre_multisheet_reference.json`): vector normalization, scalar products (incl. `TestAllLagsComputed`: last lag computed, earlier lags equal the frozen pre-fix reference `tests/fixtures/pre_lastlag_reference.json`), averaging, index-label independence, column identification, file type detection
 - **tests/test_web.py** — web API (fixture agreement, CLI-path identity, all conditions analysed, Excel, bad input),
   static build, and runs the node JS-engine tests
 

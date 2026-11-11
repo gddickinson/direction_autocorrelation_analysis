@@ -28,3 +28,14 @@
 - Fixed in the JS port: numeric condition labels are named as pandas reads them ('02' -> '2'; '2.0' when a label is
   missing), so the local Python-vs-JS cross-check no longer reports a false mismatch. New fixture case `numeric_groups`.
 - Fixture regenerated: 4 cases, 304 values, worst |JS - Python| = 4.4e-16.
+
+## 2026-11-11 — condition aggregation fix (George approved)
+- Fixed in core.py: `aggregate_condition_results` keyed replicate averages by file, so every sheet of a multi-sheet
+  file overwrote the previous one and only the last sheet entered the condition summary (all sheets' tracks were
+  kept, with clashing track IDs). Each sheet is now a replicate, labelled file:sheet (console log; `file_id` in the
+  condition track table, e.g. `file_1:ctrl`). `process_file` now returns `file_name` for these labels.
+- Regression tests `TestConditionAggregationSheets`: the multi-sheet test failed before the fix; single-sheet output
+  (summary and track table) equals a frozen pre-fix reference (`tests/fixtures/pre_multisheet_reference.json`) exactly.
+- Checked end to end with `cli.process_condition_folder` on a CSV plus a two-sheet xlsx: 3 replicates.
+- The web pages analyse single files, so their results are unaffected; README and the format page note the behaviour.
+- cli.py is 509 lines (over the 500-line budget before this work); not split here.

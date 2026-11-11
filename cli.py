@@ -158,9 +158,9 @@ def process_file(input_file, time_interval, num_intervals, output_dir, output_pr
         total_elapsed = time.time() - total_start_time
         print(f"\nAnalysis complete in {total_elapsed:.2f} seconds!")
 
-        return True, {'results': all_results, 'scalar_products': all_scalar_products,
-                      'individual_tracks': all_individual_tracks, 'file_type': file_type,
-                      'output_files': output_files}, None
+        return True, {'file_name': os.path.basename(input_file),
+                      'results': all_results, 'scalar_products': all_scalar_products,
+                      'individual_tracks': all_individual_tracks, 'file_type': file_type, 'output_files': output_files}, None
 
     except Exception as e:
         error_msg = f"Error processing file: {str(e)}"

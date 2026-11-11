@@ -223,8 +223,11 @@ def aggregate_condition_results(results_list: list,
     """
     Aggregate results from multiple files in a condition.
 
-    Computes the mean and SEM of per-file averages across all time points,
-    and combines individual track data from all files.
+    Computes the mean and SEM of per-replicate averages across all time points,
+    and combines individual track data from all files. Each sheet of a file is a
+    replicate: a single-sheet file is labelled by the file, a multi-sheet file
+    gives one replicate per sheet labelled file:sheet (previously only the last
+    sheet of such a file was used).
 
     Args:
         results_list: List of result dictionaries from process_file.
@@ -250,13 +253,21 @@ def aggregate_condition_results(results_list: list,
 
     all_time_points = sorted(all_time_points)
 
+    def replicate_label(result, sheet_name, base):
+        # Single-sheet files keep the per-file label; each sheet of a multi-sheet file is its own replicate
+        return base if len(result['results']) == 1 else f"{base}:{sheet_name}"
+
     aggregated_data = defaultdict(dict)
+    labels = []
     for i, result in enumerate(results_list):
-        file_name = f"File_{i+1}"
+        file_label = result.get('file_name', f"File_{i+1}")
         for sheet_name, averages in result['results'].items():
+            label = replicate_label(result, sheet_name, file_label)
+            labels.append(label)
             for col in averages.columns:
-                time_point = float(col)
-                aggregated_data[time_point][file_name] = averages.loc['AVG', col]
+                # keyed by file position too, so two files with the same name stay separate replicates
+                aggregated_data[float(col)][(i, sheet_name)] = averages.loc['AVG', col]
+    print(f"  {len(labels)} replicate(s): {', '.join(labels)}")
 
     summary_data = {'AVG': {}, 'SEM': {}}
     for time_point in all_time_points:
@@ -277,7 +288,7 @@ def aggregate_condition_results(results_list: list,
         if 'individual_tracks' in result:
             for sheet_name, tracks_df in result['individual_tracks'].items():
                 tracks_df = tracks_df.copy()
-                file_id = f"file_{i+1}"
+                file_id = replicate_label(result, sheet_name, f"file_{i+1}")
                 tracks_df['file_id'] = file_id
                 tracks_df['track_id'] = tracks_df['track_id'] + f"_{file_id}"
                 aggregated_tracks.append(tracks_df)

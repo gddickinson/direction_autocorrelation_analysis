@@ -103,7 +103,7 @@ The GUI will prompt you for:
 
 ### For Condition Folders
 - Individual file outputs (as above)
-- `condition_summary.csv/xlsx` - Statistics aggregated across all files
+- `condition_summary.csv/xlsx` - Mean and SEM across replicates. Each file is a replicate; a multi-sheet Excel file gives one replicate per sheet, labelled `file:sheet` (in the console log and in the `file_id` column of the condition's individual-track table). Before 2026-11-11 only the last sheet of a multi-sheet file was used; single-sheet results are unchanged.
 - `condition_summary_plot.png` - Condition-level autocorrelation plot
 - `condition_all_tracks_plot.png` - All individual tracks in the condition
 

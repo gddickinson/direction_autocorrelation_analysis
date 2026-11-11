@@ -273,3 +273,57 @@ class TestAllLagsComputed(unittest.TestCase):
         # the last lag is now finite: tracks of 40, 15 and 12 points contribute 29 + 4 + 1 pairs
         self.assertEqual(sp[n * ref['time_interval']].count(), 34)
         self.assertTrue(np.isfinite(av.loc['AVG', n * ref['time_interval']]))
+
+
+class TestConditionAggregationSheets(unittest.TestCase):
+    """aggregate_condition_results counts every sheet of a multi-sheet file as its own replicate (file:sheet)."""
+
+    @staticmethod
+    def _sheet_result(rows, dt=1.0, n=8):
+        import contextlib, io
+        from core import process_sheet
+        with contextlib.redirect_stdout(io.StringIO()):
+            _, av, tr = process_sheet(pd.DataFrame(rows), dt, n)
+        return av, tr
+
+    @staticmethod
+    def _ref():
+        import json
+        from pathlib import Path
+        return json.loads((Path(__file__).parent / 'tests' / 'fixtures' / 'pre_multisheet_reference.json').read_text())
+
+    def _aggregate(self, results):
+        import contextlib, io
+        from core import aggregate_condition_results
+        with contextlib.redirect_stdout(io.StringIO()):
+            return aggregate_condition_results(results, 'cond')
+
+    def test_every_sheet_is_a_replicate(self):
+        ref = self._ref()
+        (a1, t1), (a2, t2), (a3, t3) = [self._sheet_result(f) for f in ref['files']]
+        results = [{'file_name': 'two.xlsx', 'results': {'ctrl': a1, 'drug': a2},
+                    'individual_tracks': {'ctrl': t1, 'drug': t2}, 'file_type': 'excel'},
+                   {'file_name': 'one.xlsx', 'results': {'Sheet1': a3}, 'individual_tracks': {'Sheet1': t3},
+                    'file_type': 'excel'}]
+        summary, _, tracks = self._aggregate(results)
+        for col in a1.columns[1:]:
+            vals = np.array([a1.loc['AVG', col], a2.loc['AVG', col], a3.loc['AVG', col]])
+            self.assertAlmostEqual(summary.loc['AVG', float(col)], vals.mean(), places=14)
+            self.assertAlmostEqual(summary.loc['SEM', float(col)], vals.std(ddof=1) / np.sqrt(3), places=14)
+        self.assertEqual(sorted(tracks['file_id'].unique()), ['file_1:ctrl', 'file_1:drug', 'file_2'])
+        self.assertEqual(tracks['track_id'].nunique(), len(t1['track_id'].unique()) + len(t2['track_id'].unique())
+                         + len(t3['track_id'].unique()))
+
+    def test_single_sheet_files_unchanged(self):
+        """Single-sheet replicates give exactly the frozen pre-fix output (summary and tracks)."""
+        ref = self._ref()
+        results = []
+        for f in ref['files']:
+            av, tr = self._sheet_result(f, ref['time_interval'], ref['num_intervals'])
+            results.append({'results': {'Sheet1': av}, 'individual_tracks': {'Sheet1': tr}, 'file_type': 'csv'})
+        summary, _, tracks = self._aggregate(results)
+        self.assertEqual([float(c) for c in summary.columns], ref['summary_columns'])
+        np.testing.assert_array_equal(summary.loc['AVG'].to_numpy(float), np.array(ref['summary_avg'], float))
+        np.testing.assert_array_equal(summary.loc['SEM'].to_numpy(float), np.array(ref['summary_sem'], float))
+        for col, values in ref['tracks'].items():
+            self.assertEqual(list(tracks[col]), values, col)

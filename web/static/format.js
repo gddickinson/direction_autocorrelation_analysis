@@ -10,6 +10,8 @@ route('format', async () => {
   app().innerHTML = `<p class="kicker">Input</p><h1>Data format</h1>
     <p class="lead">One table of positions, one row per frame of each track, tracks one after another. CSV works everywhere;
       Excel (.xlsx/.xls, one condition per sheet) works in the local app${isStatic() ? ' only' : ''}.</p>
+    <p class="small mute">Command-line condition-folder mode: each file is a replicate, and each sheet of a multi-sheet
+      Excel file counts as its own replicate (labelled file:sheet) in the condition summary.</p>
     <div class="panel"><h3 style="margin-top:0">Columns</h3>
       <table><tr><th>Role</th><th>Accepted header names (any case)</th></tr>
         <tr><td>frame</td><td>${code(c.frame)}</td></tr>
