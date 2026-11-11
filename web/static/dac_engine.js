@@ -54,14 +54,20 @@ export function splitSheets({ header, rows }) {
   for (const opt of SHEET_COLUMNS) { k = header.findIndex(h => h.toLowerCase() === opt); if (k >= 0) break; }
   if (k < 0) return [{ name: 'Sheet1', header, rows }];
   const sub = header.filter((_, i) => i !== k), groups = new Map();
-  for (const r of rows) {
-    const key = r[k] ?? '';
-    if (NA.has(key.trim())) continue;
+  const raw = rows.map(r => r[k] ?? ''), isNA = raw.map(v => NA.has(v.trim()));
+  // A numeric key column is read as numbers ('02' -> 2): int names ('2') unless a key is missing or fractional,
+  // when pandas uses floats ('2.0', '2.5').
+  const present = raw.filter((_, i) => !isNA[i]);
+  const numeric = present.length > 0 && present.every(v => v.trim() !== '' && Number.isFinite(Number(v)));
+  const floats = numeric && (isNA.some(Boolean) || present.some(v => !Number.isInteger(Number(v))));
+  const norm = v => (!numeric ? v : floats && Number.isInteger(Number(v)) ? Number(v).toFixed(1) : String(Number(v)));
+  rows.forEach((r, i) => {
+    if (isNA[i]) return;
+    const key = norm(raw[i]);
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(r.filter((_, i) => i !== k));
-  }
+    groups.get(key).push(r.filter((_, j) => j !== k));
+  });
   const keys = [...groups.keys()];
-  const numeric = keys.every(x => Number.isFinite(Number(x)));
   keys.sort(numeric ? (a, b) => Number(a) - Number(b) : (a, b) => (a < b ? -1 : a > b ? 1 : 0));
   return keys.map(name => ({ name, header: sub, rows: groups.get(name) }));
 }

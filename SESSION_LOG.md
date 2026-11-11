@@ -25,4 +25,6 @@
   (`tests/fixtures/pre_lastlag_reference.json`) to 1e-15. Old results files differ only in the last lag column.
 - JS engine updated to match; the site no longer labels the last lag "not computed" (an empty lag now only occurs when
   all tracks are too short, shown as "no pairs").
-- Fixture regenerated: 3 cases, 238 values, worst |JS - Python| = 4.4e-16.
+- Fixed in the JS port: numeric condition labels are named as pandas reads them ('02' -> '2'; '2.0' when a label is
+  missing), so the local Python-vs-JS cross-check no longer reports a false mismatch. New fixture case `numeric_groups`.
+- Fixture regenerated: 4 cases, 304 values, worst |JS - Python| = 4.4e-16.

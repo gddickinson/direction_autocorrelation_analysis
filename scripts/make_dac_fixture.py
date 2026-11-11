@@ -3,7 +3,8 @@
 The node test web/static/dac_engine.test.mjs runs the JS port on the same CSV text and asserts agreement to 1e-9.
 Expected values come from web.analysis.analyse_upload, i.e. io_utils.read_file + core.process_sheet.
 Inputs are seeded persistent random walks (heading += N(0, sigma) per frame, as in test_core.py) plus edge cases:
-a one-point segment, a zero-length step, a missing value, a frame gap, alias headers and the 6-column fallback.
+a one-point segment, a zero-length step, a missing value, a frame gap, alias headers, the 6-column fallback and
+numeric condition labels with a missing label.
 
 Run: python scripts/make_dac_fixture.py
 """
@@ -62,12 +63,22 @@ def case_positional(rng):
     return "\n".join(lines) + "\n"
 
 
+def case_numeric_groups(rng):
+    """Numeric condition labels ('02' is read as 2) with one row whose label is missing (so pandas uses floats)."""
+    lines = ["group,frame,x,y"]
+    for g, L in [("02", 15), ("1", 12), ("02", 9), ("", 5), ("10", 8)]:
+        x, y = walk(rng, L, 0.5)
+        lines += [f"{g},{k + 1},{float(x[k])!r},{float(y[k])!r}" for k in range(L)]
+    return "\n".join(lines) + "\n"
+
+
 def main():
     rng = np.random.default_rng(20261111)
     cases = []
     for name, csv, dt, n in [("conditions", case_conditions(rng), 0.5, 12),
                              ("aliases", case_aliases(rng), 1.0, 25),
-                             ("positional", case_positional(rng), 0.1, 7)]:
+                             ("positional", case_positional(rng), 0.1, 7),
+                             ("numeric_groups", case_numeric_groups(rng), 1.0, 6)]:
         res = analyse_upload(name + ".csv", csv.encode(), dt, n)
         for c in res["conditions"]:
             c.pop("segments", None)
