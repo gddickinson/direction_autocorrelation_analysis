@@ -153,6 +153,47 @@ This allows automatic cross-condition comparison and aggregate statistics.
 
 5. **Output Format**: Results are saved in the same format as input files (CSV for CSV input, Excel for Excel input).
 
+## Web interface and static site
+
+A browser front end for single-file analysis: load a CSV (or simulated demo trajectories), set the frame interval,
+number of intervals and pixel size, and get a trajectory map, the direction autocorrelation curve with SEM error bars
+(optionally with every per-track curve), a summary table and CSV exports (summary and per-track, with the settings and
+units recorded in `#` header lines).
+
+| Home | Analysis (simulated demo) |
+|---|---|
+| ![Home page](docs/img/home.png) | ![Autocorrelation results](docs/img/analyse_results.png) |
+| ![Data format page](docs/img/format.png) | ![About page](docs/img/about.png) |
+
+### Run the web app
+```bash
+pip install -r requirements-web.txt
+python run_web.py            # http://127.0.0.1:8105 (local only)
+```
+The local app runs the real Python analysis: `POST /api/analyze` takes the uploaded CSV or Excel file and passes each
+sheet/condition through `io_utils.read_file` and `core.process_sheet` (see `web/analysis.py`).
+
+### Static site (GitHub Pages)
+`python scripts/build_static.py` writes `site/`; `.github/workflows/pages.yml` publishes it on every push to `main`
+(one-time setup: Settings -> Pages -> Source: GitHub Actions). On the static site the analysis runs in the browser with
+`web/static/dac_engine.js`, a JavaScript port of `identify_columns` + `process_sheet`. `node web/static/dac_engine.test.mjs`
+checks it against Python results stored in `tests/fixtures/dac_fixture.json` (regenerate with
+`python scripts/make_dac_fixture.py`); the agreement is about 1e-15. Excel files need the local app.
+
+The demo data are **simulated** persistent random walks (seeded; heading changes by a Gaussian turn each frame, as in
+`test_core.py`), not measurements; the page overlays the expected curve exp(-m sigma^2 / 2).
+
+**Note on multi-condition CSVs.** On the command line, a CSV with a `condition`/`group`/`sheet`/`experiment` column
+gives NaN for every condition after the first, because `calculate_normed_vectors` uses row labels as positions; dropped
+rows with missing values can shift track boundaries in the same way. The web layer renumbers each condition's rows
+before calling `process_sheet` (the Python code itself is unchanged), so all conditions are analysed there.
+
+### Tests
+```bash
+python -m pytest -q tests/test_web.py          # API, static build, JS engine vs Python
+python scripts/screenshots.py --static "" analyse/demo format about   # smoke test (Playwright)
+```
+
 ## Reference
 
 This script implements directional persistence analysis as described in:

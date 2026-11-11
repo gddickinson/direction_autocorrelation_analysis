@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction Autocorrelation</title>
+<meta name="description" content="Directional persistence of cell migration and particle trajectories: direction autocorrelation with error bars, in the browser or with the Python core.">
+<link rel="icon" href="static/icon.svg">
+<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/style_app.css">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<header class="top">
+  <a class="brand" href="#/"><span class="mark"></span>Direction Autocorrelation</a>
+  <nav class="groups">
+    <a href="#/analyse" data-nav="analyse">Analyse</a>
+    <a href="#/format" data-nav="format">Data format</a>
+    <a href="#/about" data-nav="about">About</a>
+  </nav>
+  <div class="right"><a class="small mute" href="https://github.com/gddickinson/direction_autocorrelation_analysis" target="_blank" rel="noopener">GitHub</a></div>
+</header>
+<main id="app" tabindex="-1"></main>
+<footer class="foot">Direction Autocorrelation · <a href="https://github.com/gddickinson/direction_autocorrelation_analysis">source on GitHub</a> · <span id="mode"></span></footer>
+<script type="module" src="static/main.js"></script>
+</body>
+</html>
