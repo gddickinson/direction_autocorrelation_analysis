@@ -7,9 +7,10 @@
 - Static site: `web/static/dac_engine.js` ports identify_columns + process_sheet to JS. Agreement with Python on the
   fixture (3 cases: 4 conditions, edge cases incl. a 1-point track, zero step, missing value, frame gap, alias headers,
   6-column fallback): worst |JS - Python| = 4.4e-16; on the 1821-row demo, 8.9e-16 (in-page cross-check).
-- Found (not changed in core.py): `calculate_normed_vectors` uses index labels as iloc positions, so in the CLI every
-  condition after the first in a multi-condition CSV is NaN, and dropped NaN rows can shift track boundaries. The web
-  layer resets each sheet's index before calling process_sheet. Also by design of core.py the last lag
+- Fixed in core.py (George approved): `calculate_normed_vectors` took track starts from index labels but sliced with
+  iloc, so in the CLI every condition after the first in a multi-condition CSV was NaN and dropped NaN rows could shift
+  track boundaries. Now positional starts + `reset_index` in `process_sheet`; results for single-condition files
+  unchanged; regression tests `TestIndexLabelsIndependence` in test_core.py. Also by design of core.py the last lag
   (num_intervals * dt) is never computed (AVG NaN, SEM 0); the web reproduces and labels this.
 - Demo data are simulated (the repo has no generator or example data): seeded persistent random walks, labelled
   SIMULATED everywhere, with the theoretical curve overlaid.

@@ -37,11 +37,6 @@ control,2,1,64.81,300.55      &lt;- frame drops: a new track
 control,2,2,63.02,302.90
 treated,3,1,401.77,95.20</pre>
     <p><button id="dl" type="button">Download demo CSV</button>
-      <span class="small mute">Simulated persistent random walks (seeded), in exactly this layout. Not measured data.</span></p>
-    <div class="callout small"><b>Note for command-line users.</b> In the Python command-line tool, a CSV with a condition
-      column gives NaN results for every condition after the first, and rows dropped for missing values can shift the track
-      boundaries, because <code>core.calculate_normed_vectors</code> reads row labels as positions. The web app renumbers the
-      rows of each condition before calling the same code, so all conditions are analysed. Splitting conditions into
-      separate files or Excel sheets avoids the issue on the command line.</div>`;
+      <span class="small mute">Simulated persistent random walks (seeded), in exactly this layout. Not measured data.</span></p>`;
   document.getElementById('dl').onclick = () => download('simulated_demo.csv', simulateCSV(), 'text/csv');
 });

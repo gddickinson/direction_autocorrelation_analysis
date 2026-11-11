@@ -190,3 +190,39 @@ class TestExpandFilePatterns(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestIndexLabelsIndependence(unittest.TestCase):
+    """Results must not depend on the DataFrame's index labels (regression: track starts were taken from labels but
+    sliced by position, so every condition after the first in a multi-condition CSV came out NaN, and rows dropped for
+    missing values shifted track boundaries)."""
+
+    def _tracks(self):
+        rng = np.random.default_rng(3)
+        rows = []
+        for _ in range(3):
+            angle, x, y = rng.uniform(0, 2 * np.pi), 0.0, 0.0
+            for f in range(12):
+                rows.append((f, x, y))
+                angle += rng.normal(0, 0.4)
+                x, y = x + np.cos(angle), y + np.sin(angle)
+        return pd.DataFrame(rows, columns=['frame', 'x', 'y'])
+
+    def test_offset_labels_match_default_labels(self):
+        from core import process_sheet
+        df = self._tracks()
+        _, ref, _ = process_sheet(df.copy(), 1.0, 8)
+        shifted = df.copy()
+        shifted.index = shifted.index + 100  # as groupby gives for the second condition of a CSV
+        _, got, _ = process_sheet(shifted, 1.0, 8)
+        pd.testing.assert_frame_equal(ref, got)
+        self.assertFalse(got.loc['AVG'].iloc[:3].isna().any())
+
+    def test_dropped_row_does_not_shift_boundaries(self):
+        from core import process_sheet
+        df = self._tracks()
+        with_gap = df.copy()
+        with_gap.loc[5, 'x'] = np.nan  # a missing value in the first track
+        _, got, _ = process_sheet(with_gap, 1.0, 8)
+        _, ref, _ = process_sheet(with_gap.dropna().reset_index(drop=True), 1.0, 8)
+        pd.testing.assert_frame_equal(ref, got)

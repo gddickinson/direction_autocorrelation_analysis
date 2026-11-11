@@ -4,11 +4,9 @@ Nothing here re-implements the maths: each sheet/condition goes through `core.pr
 does. The one difference is preparation: the sheet is reduced to frame/x/y with `io_utils.identify_columns`, rows with
 missing values are dropped and the index is reset to 0..n-1 BEFORE `process_sheet` is called.
 
-Why: `core.calculate_normed_vectors` takes trajectory starts from index *labels* and then slices with `iloc` (positions).
-When labels are not 0..n-1 (every condition after the first in a CSV with a `condition` column, because `groupby`
-keeps the original labels, or any sheet where `dropna` removed rows) the slices miss the data and the result is NaN or
-misaligned. Resetting the index makes labels equal positions, which is what the code assumes; for files where they
-already match (single-condition files without missing values) the result is identical to the CLI.
+The reset is now redundant: `core.process_sheet` renumbers rows itself since the 2026-11-11 fix (track starts were taken
+from index labels but sliced by position, so every condition after the first in a multi-condition CSV came out NaN).
+It is kept so this module does not depend on that detail.
 """
 import contextlib
 import io

@@ -183,10 +183,9 @@ checks it against Python results stored in `tests/fixtures/dac_fixture.json` (re
 The demo data are **simulated** persistent random walks (seeded; heading changes by a Gaussian turn each frame, as in
 `test_core.py`), not measurements; the page overlays the expected curve exp(-m sigma^2 / 2).
 
-**Note on multi-condition CSVs.** On the command line, a CSV with a `condition`/`group`/`sheet`/`experiment` column
-gives NaN for every condition after the first, because `calculate_normed_vectors` uses row labels as positions; dropped
-rows with missing values can shift track boundaries in the same way. The web layer renumbers each condition's rows
-before calling `process_sheet` (the Python code itself is unchanged), so all conditions are analysed there.
+**Multi-condition CSVs.** Each condition (a `condition`/`group`/`sheet`/`experiment` column) is analysed separately.
+Before 2026-11-11 the command-line tool gave NaN for every condition after the first, because
+`calculate_normed_vectors` used row labels as positions; this is fixed in `core.py` (regression test in `test_core.py`).
 
 ### Tests
 ```bash

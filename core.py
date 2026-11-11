@@ -41,7 +41,8 @@ def calculate_normed_vectors(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     new_traj_mask = (frame_diff <= 0).copy()
     new_traj_mask.iloc[0] = True
 
-    traj_starts = list(new_traj_mask[new_traj_mask].index)
+    # Positions, not index labels: the segments below are sliced with iloc
+    traj_starts = [int(i) for i in np.flatnonzero(new_traj_mask.to_numpy())]
     traj_starts.append(len(df))
 
     print(f"  Found {len(traj_starts)-1} trajectory segments")
@@ -196,7 +197,8 @@ def process_sheet(sheet_df: pd.DataFrame, time_interval: float,
         return None, None, None
 
     original_len = len(sheet_df)
-    sheet_df = sheet_df.dropna(subset=['frame', 'x', 'y'])
+    # Renumber rows 0..n-1 so labels equal positions (a condition split from a CSV keeps its original labels)
+    sheet_df = sheet_df.dropna(subset=['frame', 'x', 'y']).reset_index(drop=True)
     if len(sheet_df) < original_len:
         print(f"  Dropped {original_len - len(sheet_df)} rows with missing values")
 
