@@ -31,9 +31,12 @@ for (const c of fx.cases) {
 const r = analyseText('frame,x,y\n1,0,0\n2,1,0\n3,2,0\n4,3,0\n5,4,0\n', 1, 4);
 const s = r.conditions[0];
 assert.deepEqual(s.lags, [0, 1, 2, 3, 4]);
-assert.deepEqual(s.avg.slice(0, 4), [1, 1, 1, 1]);
-assert.equal(s.avg[4], null, 'last lag is never computed (step < num_intervals)');
-assert.equal(s.sem[4], 0);
+assert.deepEqual(s.avg, [1, 1, 1, 1, null], 'lags up to L-2 steps: 5 points give 4 vectors, lags 1..3');
+assert.deepEqual(s.n_pairs, [0, 3, 2, 1, 0]);
+assert.equal(s.sem[4], 0, 'a lag with no pairs has SEM 0, as calculate_averages gives');
+const full = analyseText('frame,x,y\n' + Array.from({ length: 30 }, (_, i) => `${i + 1},${i},0`).join('\n'), 1, 10).conditions[0];
+assert.equal(full.avg[10], 1, 'the last lag (num_intervals) is computed');
+assert.equal(full.n_pairs[10], 19);
 assert.equal(identifyColumns(['a', 'b']), null);
 assert.equal(splitSheets(parseCSV('Group,frame,x,y\nB,1,0,0\nA,1,0,0\n')).map(x => x.name).join(), 'A,B');
 

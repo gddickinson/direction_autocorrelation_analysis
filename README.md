@@ -145,7 +145,7 @@ This allows automatic cross-condition comparison and aggregate statistics.
 
 1. **Frame Rate Selection**: Choose an appropriate time interval between frames. Too short intervals may capture noise; too long may miss important cell movements.
 
-2. **Number of Intervals**: Set based on how long you want to track directional persistence. Higher values analyze longer-term behavior.
+2. **Number of Intervals**: Set based on how long you want to track directional persistence. Higher values analyze longer-term behavior. Lags 1 to N intervals are all computed; a track of L positions contributes to lags of up to L-2 intervals. (Before 2026-11-11 the last lag, N × interval, was always left empty; earlier lags are unchanged.)
 
 3. **Y-Axis Scale**: Default is set to -0.2 to 1.0 for consistent visualization across conditions.
 

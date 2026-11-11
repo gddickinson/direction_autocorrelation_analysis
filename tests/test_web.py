@@ -106,7 +106,7 @@ def test_every_condition_analysed():
     got = _post(FIXTURE["cases"][0]["csv"], 0.5, 12).json()["conditions"]
     assert len(got) == 2
     for c in got:
-        assert all(v is not None for v in c["avg"][:-1]) and c["avg"][-1] is None
+        assert all(v is not None for v in c["avg"])  # including the last lag (num_intervals * dt)
 
 
 def test_excel_upload(tmp_path):

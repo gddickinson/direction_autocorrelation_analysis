@@ -4,8 +4,8 @@
 //  - a new trajectory starts wherever the frame number does not increase (frame[i] - frame[i-1] <= 0);
 //  - the unit vector stored on row k is (r[k-1] - r[k]) / |r[k-1] - r[k]| (first row of a track has none; zero steps
 //    give NaN and are skipped);
-//  - lags are time_interval * step for step = 1..num_intervals, but only steps < min(num_intervals, track length)
-//    are computed, so the last lag is always empty (AVG NaN, SEM 0) exactly as in core.py;
+//  - lags are time_interval * step for step = 1..num_intervals; a track of L points contributes to steps up to
+//    min(num_intervals, L - 2) (L - 1 vectors); a lag with no pairs has AVG NaN, SEM 0;
 //  - SEM = sample std (ddof 1) / sqrt(n) of the pooled scalar products; lag 0 is fixed at AVG 1, SEM 0.
 // Rows with missing frame/x/y are dropped and positions are re-indexed 0..n-1 (see web/analysis.py for why).
 // The output has the same JSON shape as POST /api/analyze. Tested against Python in dac_engine.test.mjs.
@@ -122,8 +122,8 @@ export function processArrays(frame, x, y, timeInterval, numIntervals) {
     const a = starts[i], b = starts[i + 1], len = b - a;
     if (len < 2) continue;
     const tr = { id: `track_${i + 1}`, t: [], c: [] };
-    const maxI = Math.min(numIntervals, len);
-    for (let step = 1; step < maxI; step++) {
+    const maxStep = Math.min(numIntervals, len - 2);
+    for (let step = 1; step <= maxStep; step++) {
       const dots = [];
       for (let j = a; j < b - step; j++) {
         const d = vx[j] * vx[j + step] + vy[j] * vy[j + step];

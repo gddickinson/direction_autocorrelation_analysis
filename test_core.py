@@ -226,3 +226,50 @@ class TestIndexLabelsIndependence(unittest.TestCase):
         _, got, _ = process_sheet(with_gap, 1.0, 8)
         _, ref, _ = process_sheet(with_gap.dropna().reset_index(drop=True), 1.0, 8)
         pd.testing.assert_frame_equal(ref, got)
+
+
+class TestAllLagsComputed(unittest.TestCase):
+    """Every lag 1..num_intervals is computed when a track is long enough (the last lag used to be skipped)."""
+
+    @staticmethod
+    def _run(df, dt, n):
+        import contextlib, io
+        from core import process_sheet
+        with contextlib.redirect_stdout(io.StringIO()):
+            return process_sheet(df, dt, n)
+
+    def test_last_lag_computed(self):
+        df = pd.DataFrame({'frame': range(1, 31), 'x': np.arange(30.0), 'y': np.zeros(30)})
+        sp, av, _ = self._run(df, 1.0, 10)
+        self.assertAlmostEqual(av.loc['AVG', 10.0], 1.0)
+        self.assertEqual(av.loc['SEM', 10.0], 0.0)
+        self.assertEqual(sp[10.0].count(), 30 - 1 - 10)  # 29 unit vectors, pairs 10 apart
+
+    def test_per_track_lags_limited_by_length(self):
+        """A track of L points has L-1 vectors, so lags up to L-2 steps (and at most num_intervals)."""
+        df = pd.DataFrame({'frame': [1, 2, 3, 4, 5] + list(range(1, 21)),
+                           'x': [0, 1, 2, 3, 4] + list(range(20)), 'y': [0.0] * 25})
+        _, _, tracks = self._run(df, 1.0, 10)
+        lags = tracks.groupby('track_id')['time_interval'].max()
+        self.assertEqual(lags['track_1'], 3.0)
+        self.assertEqual(lags['track_2'], 10.0)
+
+    def test_earlier_lags_unchanged(self):
+        """Lags below num_intervals are identical to the results before the fix (frozen reference)."""
+        import json
+        from pathlib import Path
+        ref = json.loads((Path(__file__).parent / 'tests' / 'fixtures' / 'pre_lastlag_reference.json').read_text())
+        df = pd.DataFrame({'frame': ref['frame'], 'x': ref['x'], 'y': ref['y']})
+        sp, av, tracks = self._run(df, ref['time_interval'], ref['num_intervals'])
+        n = ref['num_intervals']
+        np.testing.assert_allclose(av.loc['AVG'].to_numpy(float)[:n], np.array(ref['avg'][:n], float), rtol=0, atol=1e-15)
+        np.testing.assert_allclose(av.loc['SEM'].to_numpy(float)[:n], np.array(ref['sem'][:n], float), rtol=0, atol=1e-15)
+        self.assertEqual([int(sp[c].count()) for c in sp.columns][:n - 1], ref['n_pairs'][:n - 1])
+        old = {(t, lag): c for t, lag, c in ref['tracks']}
+        new = {(r.track_id, r.time_interval): r.correlation for r in tracks.itertuples()}
+        for k, v in old.items():
+            self.assertAlmostEqual(new[k], v, places=15)
+        self.assertTrue(all(lag == n * ref['time_interval'] for (_, lag) in set(new) - set(old)))
+        # the last lag is now finite: tracks of 40, 15 and 12 points contribute 29 + 4 + 1 pairs
+        self.assertEqual(sp[n * ref['time_interval']].count(), 34)
+        self.assertTrue(np.isfinite(av.loc['AVG', n * ref['time_interval']]))

@@ -113,10 +113,13 @@ def calculate_scalar_products(df: pd.DataFrame, traj_starts: list,
 
         track_id = f"track_{i+1}"
         individual_track_results[track_id] = {}
-        max_intervals = min(num_intervals, traj_length)
+        # A track of L points has L-1 direction vectors, so the longest lag with a vector pair is L-2 steps.
+        # Every lag 1..num_intervals is computed when the track is long enough (previously the loop stopped
+        # at num_intervals-1, leaving the last lag empty).
+        max_step = min(num_intervals, traj_length - 2)
         traj_vectors = df.iloc[start_idx:end_idx]
 
-        for step in range(1, max_intervals):
+        for step in range(1, max_step + 1):
             time_point = time_interval * step
 
             x_vecs1 = traj_vectors['x_vector'].values[:-step]

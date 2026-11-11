@@ -61,7 +61,7 @@
 - **requirements-web.txt** — pinned web/test dependencies
 
 ### Tests
-- **test_core.py** — 16 tests covering vector normalization, scalar products, averaging, column identification, file type detection
+- **test_core.py** — 21 tests: vector normalization, scalar products (incl. `TestAllLagsComputed`: last lag computed, earlier lags equal the frozen pre-fix reference `tests/fixtures/pre_lastlag_reference.json`), averaging, index-label independence, column identification, file type detection
 - **tests/test_web.py** — web API (fixture agreement, CLI-path identity, all conditions analysed, Excel, bad input),
   static build, and runs the node JS-engine tests
 

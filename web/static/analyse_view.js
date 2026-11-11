@@ -18,7 +18,6 @@ export function renderResults(host, res, meta) {
   if (meta.simulated) notes.push('<span class="sim-badge">SIMULATED</span> These results are from simulated persistent random walks, not measurements. Dashed lines show the expected curve exp(−m σ²/2) for a lag of m frames.');
   bad.forEach(c => notes.push(`<span class="err">${esc(c.name)}: ${esc(c.error)}</span>`));
   dropped.forEach(c => notes.push(`${esc(c.name)}: ${c.n_dropped} row(s) with a missing frame, x or y value were dropped.`));
-  notes.push(`As in the Python code, lags are computed for steps shorter than the number of intervals, so the last lag (${fmtLag(res.time_interval * res.num_intervals)} ${esc(unit)}) is always empty.`);
   if (meta.check !== null && meta.check !== undefined) {
     notes.push(Number.isFinite(meta.check) && meta.check < 1e-9
       ? `<span class="ok">Cross-check:</span> the in-browser JS port gives the same numbers as Python here (largest difference ${meta.check.toExponential(1)}).`
@@ -66,7 +65,7 @@ export function renderResults(host, res, meta) {
 
   const lags = ok[0].lags;
   host.querySelector('#t-sum').innerHTML = `<table><tr><th>lag (${esc(unit)})</th>${ok.map(c => `<th>${esc(c.name)}</th>`).join('')}</tr>
-    ${lags.map((l, r) => `<tr><td class="mono">${fmtLag(l)}</td>${ok.map(c => `<td class="mono">${c.avg[r] === null ? '<span class="mute">not computed (n 0)</span>' : `${f3(c.avg[r])} ± ${f3(c.sem[r])} <span class="mute">(n ${c.n_pairs[r]})</span>`}</td>`).join('')}</tr>`).join('')}</table>`;
+    ${lags.map((l, r) => `<tr><td class="mono">${fmtLag(l)}</td>${ok.map(c => `<td class="mono">${c.avg[r] === null ? '<span class="mute">no pairs (tracks too short)</span>' : `${f3(c.avg[r])} ± ${f3(c.sem[r])} <span class="mute">(n ${c.n_pairs[r]})</span>`}</td>`).join('')}</tr>`).join('')}</table>`;
   const base = meta.file.replace(/\.[^.]+$/, '');
   host.querySelector('#x-sum').onclick = () => download(`${base}_autocorrelation_summary.csv`, summaryCSV(res, meta), 'text/csv');
   host.querySelector('#x-tr').onclick = () => download(`${base}_individual_tracks.csv`, tracksCSV(res, meta), 'text/csv');
